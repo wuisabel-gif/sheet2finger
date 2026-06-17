@@ -5,23 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Piano Pathfinder — Fingering Optimizer</title>
 <style>
-  /* ============================================================
-     Piano Pathfinder — "nostalgic" monochrome theme
-     Aged paper & ink · strictly black, white and grayscale.
-     ============================================================ */
+
   :root {
-    /* surfaces (warm-neutral, fully desaturated = black & white) */
-    --bg:            #e4e0d4;   /* page — aged paper          */
+
+    --bg:            #e4e0d4;
     --bg-2:          #ded9cb;
-    --panel:         #efece2;   /* card — lighter leaf        */
+    --panel:         #efece2;
     --panel-2:       #e6e2d5;
-    --ivory:         #faf8f0;   /* white keys / paper white   */
+    --ivory:         #faf8f0;
     --ivory-dim:     #e7e3d6;
-    --ebony:         #1f1e1a;   /* black keys / ink surfaces  */
-    /* ink + grays (legacy accent names remapped to monochrome) */
-    --gold:          #211f1a;   /* primary "accent" = ink     */
-    --gold-soft:     #4a463c;   /* headings / code            */
-    --blue:          #232019;   /* finger marker fill = ink   */
+    --ebony:         #1f1e1a;
+
+    --gold:          #211f1a;
+    --gold-soft:     #4a463c;
+    --blue:          #232019;
     --blue-soft:     #6c6557;
     --blue-glow:     rgba(31,30,26,.20);
     --text:          #211f1a;
@@ -50,7 +47,7 @@
     -webkit-font-smoothing: antialiased;
     position: relative;
   }
-  /* film grain + vignette — the nostalgic texture */
+
   body::before {
     content: ""; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
     opacity: .055; mix-blend-mode: multiply;
@@ -65,7 +62,6 @@
 
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 90px; position: relative; z-index: 1; }
 
-  /* ---------- Hero ---------- */
   header.hero { text-align: center; padding: 70px 24px 26px; position: relative; z-index: 1; }
   .badge {
     display: inline-block;
@@ -97,7 +93,7 @@
     font-style: italic;
   }
   .subtitle b { color: var(--text); font-weight: 600; font-style: normal; }
-  /* fleuron divider under the hero */
+
   header.hero::after {
     content: "❧";
     display: block;
@@ -107,7 +103,6 @@
     line-height: 1;
   }
 
-  /* ---------- Panels ---------- */
   .panel {
     background: var(--panel);
     border: 1px solid var(--text);
@@ -152,7 +147,6 @@
     font-size: .92em;
   }
 
-  /* ---------- Input ---------- */
   .input-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: stretch; }
   textarea#notes {
     flex: 1 1 420px;
@@ -199,7 +193,6 @@
   .err { color: var(--text); font-size: 13px; margin-top: 12px; font-family: var(--mono); min-height: 17px; font-weight: 700; }
   .err:not(:empty)::before { content: "✗ "; }
 
-  /* ---------- Keyboard ---------- */
   .kb-scroll { overflow-x: auto; padding: 10px 2px 12px; }
   .keyboard { position: relative; height: 196px; user-select: none; filter: drop-shadow(0 8px 14px rgba(40,37,30,.22)); }
   .key { position: absolute; bottom: 0; border-radius: 0 0 3px 3px; cursor: pointer; transition: background .12s, box-shadow .12s; }
@@ -240,7 +233,6 @@
   .kb-legend { display:flex; gap:20px; flex-wrap:wrap; margin-top:16px; color:var(--text-dim); font-size:12px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; }
   .kb-legend .dot { display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:7px; vertical-align:-1px; border:1px solid var(--text); }
 
-  /* ---------- Path strip ---------- */
   .pathstrip { display:flex; gap:9px; flex-wrap:wrap; margin-top:22px; }
   .pp {
     display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -259,7 +251,6 @@
   .pp.locked .fcircle { background: var(--ivory); color:var(--text); }
   .pp .pos { font-size:9.5px; color:var(--text-dim); font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; }
 
-  /* ---------- Algorithm panel ---------- */
   .algo-grid { display:grid; grid-template-columns: 1fr; gap:22px; }
   @media (min-width: 820px){ .algo-grid { grid-template-columns: 1.4fr 1fr; } }
   .dp-table-wrap { overflow-x:auto; border:1px solid var(--text); border-radius:var(--radius); background:var(--ivory); }
@@ -281,7 +272,6 @@
   .steplog .ar { color:var(--text); font-weight:700; }
   .steplog b { color:var(--text); font-weight:700; }
 
-  /* ---------- A* frontier viz ---------- */
   table.dp td.cell.path { background:var(--text); color:var(--ivory); font-weight:700; }
   table.dp td.cell.expanded { font-weight:600; }
   table.dp td.cell.frontier { color:var(--text); border:1px dashed var(--text); font-style:italic; background:repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(31,30,26,.07) 4px, rgba(31,30,26,.07) 5px); }
@@ -298,7 +288,6 @@
   .astar-status { margin-top:14px; font-family:var(--mono); font-size:12px; color:var(--text-dim); border-top:1px solid var(--line); padding-top:12px; min-height:18px; }
   .astar-status b { color:var(--text); }
 
-  /* ---------- Result ---------- */
   .result-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap:18px; }
   .stat { background:var(--ivory); border:1px solid var(--text); border-radius:var(--radius); padding:18px 20px; }
   .stat .k { font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--text-dim); margin-bottom:9px; font-family:var(--mono); }
@@ -311,7 +300,6 @@
   .reason-box { grid-column: 1 / -1; background:var(--ivory); border:1px solid var(--text); border-left:5px solid var(--text); border-radius:var(--radius); padding:16px 20px; color:var(--text); font-size:15.5px; font-style:italic; }
   .reason-box .k { color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:.14em; margin-bottom:7px; font-family:var(--mono); font-style:normal; }
 
-  /* ---------- Presets ---------- */
   .presets { display:flex; gap:11px; flex-wrap:wrap; }
   .preset {
     background:transparent; border:1px solid var(--text); border-radius:999px;
@@ -320,7 +308,6 @@
   }
   .preset:hover { background:var(--text); color:var(--ivory); }
 
-  /* ---------- Explain ---------- */
   .explain { color:var(--text-dim); font-size:15px; }
   .explain h3 { color:var(--text); font-size:18px; margin:6px 0 8px; font-weight:600; font-style:italic; }
   .explain .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:26px; }
@@ -333,6 +320,7 @@
   footer .cr a { font-weight:700; }
 
   .empty { color:var(--text-dim); font-size:15px; font-style:italic; padding:10px 0; }
+
 </style>
 </head>
 <body>
@@ -366,8 +354,10 @@
     <div class="opts">
       <label>Analysis:
         <select id="algo">
-          <option value="dp">Best fingering (instant)</option>
-          <option value="astar">Watch it search (animated)</option>
+          <option value="dp">Dynamic Programming — instant best</option>
+          <option value="dijkstra">Dijkstra — watch it search</option>
+          <option value="astar">A* — watch it search</option>
+          <option value="bfs">BFS — naive baseline (ignores comfort)</option>
         </select>
       </label>
       <label>Tempo:
@@ -467,13 +457,7 @@
 </div>
 
 <script>
-/* ============================================================
-   Piano Pathfinder — single-file build
-   Modules (conceptual): noteParser · costFunction ·
-   fingeringOptimizer · presets · UI
-   ============================================================ */
 
-/* ---------- noteParser ---------- */
 const NOTE_TO_SEMITONE = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
 
 function noteToMidi(token) {
@@ -484,7 +468,7 @@ function noteToMidi(token) {
   if (m[2] === '#') semis += 1;
   if (m[2] === 'b') semis -= 1;
   const octave = parseInt(m[3], 10);
-  // MIDI: C4 = 60  (octave+1)*12 + semitone
+
   return (octave + 1) * 12 + semis;
 }
 
@@ -509,33 +493,21 @@ function parseNotes(text) {
   return notes;
 }
 
-/* ---------- costFunction ----------
-   Movement cost of moving the right hand from playing `fromMidi`
-   with `fromFinger` to `toMidi` with `toFinger`. Returns {cost, reasons}.
-
-   Core idea — a HAND-POSITION model. When the hand is relaxed in a five-finger
-   position, each finger sits over a neutral semitone offset (REST). To keep the
-   hand still, the interval between two notes "should" equal the difference of
-   those fingers' rest offsets. Whatever interval is left over is hand
-   DISPLACEMENT — the wrist physically sliding — and that is the dominant cost.
-   This makes scales naturally prefer thumb-under crossings over impossible
-   same-position stretches. */
-const REST = { 1: 0, 2: 2, 3: 4, 4: 6, 5: 8 };  // neutral semitone offsets, RH
-const MAX_SPAN = 13;                              // beyond an octave+1 is a leap/jump
+const REST = { 1: 0, 2: 2, 3: 4, 4: 6, 5: 8 };
+const MAX_SPAN = 13;
 
 function transitionCost(fromMidi, fromFinger, toMidi, toFinger) {
-  const interval = toMidi - fromMidi;             // signed semitones
+  const interval = toMidi - fromMidi;
   const dist = Math.abs(interval);
   const reasons = [];
 
-  // Repeated note on the same finger: ideal — hold it.
   if (fromFinger === toFinger && dist === 0) {
     return { cost: 0, reasons: ['finger held on repeated note (free)'] };
   }
 
-  const expected = REST[toFinger] - REST[fromFinger]; // interval that keeps hand still
-  const displacement = interval - expected;           // wrist slide required
-  let cost = Math.abs(displacement) * 0.9;            // dominant term
+  const expected = REST[toFinger] - REST[fromFinger];
+  const displacement = interval - expected;
+  let cost = Math.abs(displacement) * 0.9;
   if (Math.abs(displacement) <= 1) {
     reasons.push('hand stays in position (smooth)');
   } else {
@@ -544,59 +516,43 @@ function transitionCost(fromMidi, fromFinger, toMidi, toFinger) {
 
   const ascending = interval > 0;
 
-  // Crossings: thumb-under when ascending, finger-over when descending — these
-  // are the maneuvers that let scales run. Allowed, but carry a real cost.
   const thumbUnder  = ascending  && toFinger === 1 && fromFinger >= 2;
   const fingerOver  = !ascending && fromFinger === 1 && toFinger >= 3;
   if (thumbUnder) { cost += 1.2; reasons.push('thumb-under crossing (+1.2)'); }
   if (fingerOver) { cost += 1.2; reasons.push('finger-over crossing (+1.2)'); }
 
-  // Same finger forced onto a different note (no crossing benefit): must lift
-  // and re-place — extra friction on top of the displacement already charged.
   if (fromFinger === toFinger && dist > 0) {
     cost += 2; reasons.push('same finger re-articulated on a moving note (+2)');
   }
 
-  // "Tangled" fingering without a sanctioned crossing: e.g. a higher finger
-  // landing on a lower note (or vice-versa) when it isn't a thumb-under /
-  // finger-over. Physically cramped.
   if (!thumbUnder && !fingerOver && fromFinger !== toFinger) {
     if ((ascending && toFinger < fromFinger) || (!ascending && toFinger > fromFinger)) {
       cost += 2.5; reasons.push('crossed fingers without a valid pivot (+2.5)');
     }
   }
 
-  // Cramped thumb↔pinky on a tiny interval.
   if (((fromFinger === 1 && toFinger === 5) || (fromFinger === 5 && toFinger === 1)) && dist < 3) {
     cost += 2; reasons.push('cramped thumb↔pinky on a small interval (+2)');
   }
 
-  // Big leaps strain the hand regardless of fingering.
   if (dist > MAX_SPAN) { cost += (dist - MAX_SPAN) * 1.0 + 2; reasons.push('large leap beyond an octave (+)'); }
 
   return { cost: Math.max(cost, 0), reasons };
 }
 
-/* Small static preference for which finger lands on a note in isolation —
-   keeps ties stable and gently favors the strong middle fingers. */
 function noteFingerBias(finger) {
-  return [0, 0.15, 0, 0, 0.1, 0.3][finger]; // thumb & pinky slightly disfavored at rest
+  return [0, 0.15, 0, 0, 0.1, 0.3][finger];
 }
 
-/* ---------- fingeringOptimizer ----------
-   Viterbi-style DP / single-source shortest path over the finger-state graph.
-   `locks` maps noteIndex -> finger (1..5) to constrain the search. */
 function optimize(notes, locks, mode) {
   const N = notes.length;
   const FINGERS = [1,2,3,4,5];
   const INF = Infinity;
 
-  // cost[i][f], back[i][f] = best previous finger
   const cost = Array.from({length:N}, () => new Array(6).fill(INF));
   const back = Array.from({length:N}, () => new Array(6).fill(0));
   const allowed = (i, f) => !(locks[i] && locks[i] !== f);
 
-  // Layer 0
   for (const f of FINGERS) {
     if (allowed(0, f)) cost[0][f] = noteFingerBias(f);
   }
@@ -622,14 +578,12 @@ function optimize(notes, locks, mode) {
     }
   }
 
-  // Pick best final finger
   let endFinger = 1, endCost = INF;
   for (const f of FINGERS) {
     if (cost[N-1][f] < endCost) { endCost = cost[N-1][f]; endFinger = f; }
   }
   if (endCost === INF) throw new Error('No valid fingering — check your finger locks.');
 
-  // Back-trace
   const fingers = new Array(N);
   let f = endFinger;
   for (let i = N-1; i >= 0; i--) { fingers[i] = f; f = back[i][f]; }
@@ -637,34 +591,22 @@ function optimize(notes, locks, mode) {
   return { fingers, cost, totalCost: endCost, log, mode };
 }
 
-/* ---------- A* search ----------
-   The SAME layered finger-state graph as the DP, but explored with A*.
-
-   Heuristic — h(i) = sum of the per-transition MINIMUM edge costs over every
-   remaining note transition. Each future transition must cost at least its
-   cheapest finger pairing, so the running sum is a lower bound on the true
-   remaining cost: the heuristic never overestimates (ADMISSIBLE). It is also
-   CONSISTENT, because h(i) = minTrans[i] + h(i+1) ≤ edge(i→i+1) + h(i+1).
-   Consistency means the first goal node popped from the frontier is provably
-   optimal — no re-expansion needed.
-
-   We record an `events` timeline (discover / expand) so the UI can animate the
-   frontier exactly as A* explored it. */
-function optimizeAStar(notes, locks) {
+function frontierSearch(notes, locks, useHeuristic, modeName) {
   const N = notes.length;
   const FINGERS = [1,2,3,4,5];
   const allowed = (i,f) => !(locks[i] && locks[i] !== f);
   const edgeCost = (i, fa, fb) =>
     transitionCost(notes[i].midi, fa, notes[i+1].midi, fb).cost + noteFingerBias(fb);
 
-  // Admissible + consistent heuristic via suffix sums of per-transition minima.
   const hSuffix = new Array(N).fill(0);
-  for (let i = N-2; i >= 0; i--) {
-    let mn = Infinity;
-    for (const fa of FINGERS) { if (!allowed(i,fa)) continue;
-      for (const fb of FINGERS) { if (!allowed(i+1,fb)) continue;
-        const c = edgeCost(i, fa, fb); if (c < mn) mn = c; } }
-    hSuffix[i] = (mn === Infinity ? 0 : mn) + hSuffix[i+1];
+  if (useHeuristic) {
+    for (let i = N-2; i >= 0; i--) {
+      let mn = Infinity;
+      for (const fa of FINGERS) { if (!allowed(i,fa)) continue;
+        for (const fb of FINGERS) { if (!allowed(i+1,fb)) continue;
+          const c = edgeCost(i, fa, fb); if (c < mn) mn = c; } }
+      hSuffix[i] = (mn === Infinity ? 0 : mn) + hSuffix[i+1];
+    }
   }
   const h = i => hSuffix[i];
 
@@ -683,7 +625,7 @@ function optimizeAStar(notes, locks) {
 
   let goalKey = null;
   while (open.length) {
-    // extract-min by f-score (small graph — linear scan is plenty fast)
+
     let bi = 0;
     for (let x = 1; x < open.length; x++) if (fOf.get(open[x]) < fOf.get(open[bi])) bi = x;
     const k = open.splice(bi, 1)[0];
@@ -691,7 +633,7 @@ function optimizeAStar(notes, locks) {
     closed.add(k);
     const i = Math.floor(k/6), f = k - i*6;
     events.push({ type:'expand', i, f, g: g.get(k), h: h(i), fScore: fOf.get(k) });
-    if (i === N-1) { goalKey = k; break; }   // first goal popped is optimal
+    if (i === N-1) { goalKey = k; break; }
     for (const f2 of FINGERS) {
       if (!allowed(i+1, f2) || closed.has(key(i+1,f2))) continue;
       const k2 = key(i+1, f2);
@@ -708,10 +650,53 @@ function optimizeAStar(notes, locks) {
   let totalNodes = 0;
   for (let i = 0; i < N; i++) for (const f of FINGERS) if (allowed(i,f)) totalNodes++;
   const expandedCount = events.filter(e => e.type === 'expand').length;
-  return { fingers, totalCost: g.get(goalKey), events, expandedCount, totalNodes, cost: null, mode: 'astar' };
+  return { fingers, totalCost: g.get(goalKey), events, expandedCount, totalNodes, cost: null, mode: modeName };
 }
 
-/* ---------- difficulty + reason ---------- */
+function optimizeBFS(notes, locks) {
+  const N = notes.length;
+  const FINGERS = [1,2,3,4,5];
+  const allowed = (i,f) => !(locks[i] && locks[i] !== f);
+  const key = (i,f) => i*6 + f;
+  const g = new Map(), came = new Map(), seen = new Set();
+  const events = [], queue = [];
+  let head = 0;
+
+  function discover(i, f, gv, parent) {
+    const k = key(i,f);
+    g.set(k, gv);
+    if (parent !== undefined) came.set(k, parent);
+    seen.add(k); queue.push(k);
+    events.push({ type:'discover', i, f, g: gv, fScore: gv });
+  }
+  for (const f of FINGERS) if (allowed(0,f)) discover(0, f, noteFingerBias(f), undefined);
+
+  let goalKey = null;
+  while (head < queue.length) {
+    const k = queue[head++];
+    const i = Math.floor(k/6), f = k - i*6;
+    events.push({ type:'expand', i, f, g: g.get(k), h: 0, fScore: g.get(k) });
+    if (i === N-1) { goalKey = k; break; }
+    for (const f2 of FINGERS) {
+      if (!allowed(i+1, f2) || seen.has(key(i+1,f2))) continue;
+      const gv = g.get(k) + transitionCost(notes[i].midi, f, notes[i+1].midi, f2).cost + noteFingerBias(f2);
+      discover(i+1, f2, gv, k);
+    }
+  }
+  if (goalKey === null) throw new Error('No valid fingering — check your finger locks.');
+
+  const fingers = new Array(N);
+  for (let cur = goalKey; cur !== undefined; cur = came.get(cur)) {
+    const i = Math.floor(cur/6); fingers[i] = cur - i*6;
+  }
+  let totalNodes = 0;
+  for (let i = 0; i < N; i++) for (const f of FINGERS) if (allowed(i,f)) totalNodes++;
+  const expandedCount = events.filter(e => e.type === 'expand').length;
+  let optimalCost = null;
+  try { optimalCost = optimize(notes, locks, 'dp').totalCost; } catch (e) {}
+  return { fingers, totalCost: g.get(goalKey), optimalCost, events, expandedCount, totalNodes, cost: null, mode: 'bfs' };
+}
+
 function difficultyOf(totalCost, n) {
   const perNote = totalCost / Math.max(n - 1, 1);
   if (perNote < 2.4) return 'Easy';
@@ -731,7 +716,6 @@ function mainReason(notes, fingers) {
   return 'Fingers ascend and descend in natural order, minimizing hand displacement.';
 }
 
-/* ---------- presets ---------- */
 const PRESETS = {
   'C Major Scale':  'C4 D4 E4 F4 G4 A4 B4 C5',
   'G Major Scale':  'G4 A4 B4 C5 D5 E5 F#5 G5',
@@ -740,15 +724,11 @@ const PRESETS = {
   'Für Elise Opening':'E5 D#5 E5 D#5 E5 B4 D5 C5 A4'
 };
 
-/* ============================================================
-   UI / RENDERING
-   ============================================================ */
 const $ = sel => document.querySelector(sel);
 let state = { notes: [], result: null, locks: {}, audioCtx: null };
 
 function showError(msg) { $('#err').textContent = msg || ''; }
 
-/* ----- Keyboard rendering (dynamic range based on notes) ----- */
 const WHITE_W = 38, WHITE_H = 196, BLACK_W = 24, BLACK_H = 120;
 const isBlack = m => [1,3,6,8,10].includes(((m%12)+12)%12);
 
@@ -760,11 +740,10 @@ function renderKeyboard() {
 
   let lo = Math.min(...notes.map(n=>n.midi)) - 2;
   let hi = Math.max(...notes.map(n=>n.midi)) + 2;
-  // snap to white-key boundaries
+
   while (isBlack(lo)) lo--;
   while (isBlack(hi)) hi++;
 
-  // Map: assign x to white keys sequentially; black keys sit between.
   const whiteX = {};
   let wi = 0;
   for (let m = lo; m <= hi; m++) {
@@ -779,7 +758,6 @@ function renderKeyboard() {
   }
   const activeSet = new Set(notes.map(n=>n.midi));
 
-  // white keys first
   for (let m = lo; m <= hi; m++) {
     if (isBlack(m)) continue;
     const k = document.createElement('div');
@@ -794,10 +772,10 @@ function renderKeyboard() {
     k.addEventListener('click', ()=> playMidi(m, 260));
     kb.appendChild(k);
   }
-  // black keys on top
+
   for (let m = lo; m <= hi; m++) {
     if (!isBlack(m)) continue;
-    const leftWhite = m - 1; // white key just below
+    const leftWhite = m - 1;
     const baseX = whiteX[leftWhite];
     if (baseX === undefined) continue;
     const k = document.createElement('div');
@@ -819,7 +797,6 @@ function addFinger(keyEl, finger) {
   keyEl.appendChild(f);
 }
 
-/* ----- Path strip (clickable, lockable) ----- */
 function renderPathStrip() {
   const strip = $('#pathstrip');
   strip.innerHTML = '';
@@ -843,21 +820,24 @@ function cycleLock(i) {
   runOptimize(false);
 }
 
-/* ----- Algorithm panel dispatcher ----- */
 function renderAlgoPanel() {
   if (!state.result) { clearAStarControls(); $('#dpTable').innerHTML = ''; return; }
-  if (state.result.mode === 'astar') {
-    $('#algoHint').innerHTML = 'Watch the app try out finger positions and home in on the most comfortable path. ' +
-      'Cells fill in as they’re checked (light → dark); dashed cells are options still on the table; the solid path is the final recommendation. Press <b>Animate</b> to replay.';
-    renderAStarGrid(state.result);
-  } else {
+  const HINTS = {
+    dp: 'Each cell shows the running effort to reach that note on a given finger (lower is easier). The highlighted cells trace the most comfortable fingering overall.',
+    astar: 'Watch the app try out finger positions and home in on the most comfortable path. Cells fill in as they’re checked (light → dark); dashed cells are options still on the table; the solid path is the final recommendation. Press <b>Animate</b> to replay.',
+    dijkstra: 'Dijkstra explores outward from the start, always expanding the cheapest option so far — with no sense of where the goal is. It reaches the same comfortable fingering as A*, but checks more possibilities to get there. Press <b>Animate</b> to compare.',
+    bfs: 'BFS ignores how awkward each move is — it just fans out level by level and grabs the first complete fingering it reaches. The result is valid but <b>not comfortable</b> (often the same finger throughout): a baseline showing why the cost model matters.'
+  };
+  if (state.result.mode === 'dp') {
     clearAStarControls();
-    $('#algoHint').innerHTML = 'Each cell shows the running effort to reach that note on a given finger (lower is easier). The highlighted cells trace the most comfortable fingering overall.';
+    $('#algoHint').innerHTML = HINTS.dp;
     renderDpTable();
+  } else {
+    $('#algoHint').innerHTML = HINTS[state.result.mode] || HINTS.astar;
+    renderSearchGrid(state.result);
   }
 }
 
-/* ----- A* frontier visualization ----- */
 let astarTimer = null;
 function clearAStarControls() {
   if (astarTimer) { clearInterval(astarTimer); astarTimer = null; }
@@ -865,12 +845,11 @@ function clearAStarControls() {
   const st = $('#astarStatus'); if (st) st.innerHTML = '';
 }
 
-function renderAStarGrid(res) {
+function renderSearchGrid(res) {
   clearAStarControls();
   const { events, fingers, expandedCount, totalNodes, totalCost } = res;
   const N = state.notes.length;
 
-  // Build the grid (rows = notes, cols = fingers).
   const t = $('#dpTable');
   t.innerHTML = '';
   const thead = document.createElement('thead');
@@ -894,7 +873,6 @@ function renderAStarGrid(res) {
   t.appendChild(tb);
   const cells = [...t.querySelectorAll('td.cell')];
 
-  // Reconstruct the discovered/expanded sets after the first k+1 events.
   function stateAfter(k) {
     const discovered = new Map(), expanded = new Set(), expandOrder = [];
     for (let e = 0; e <= k; e++) {
@@ -912,7 +890,7 @@ function renderAStarGrid(res) {
       td.className = 'cell'; td.style.background = ''; td.style.color = ''; td.textContent = '·';
       if (showPath && fingers[i] === f) { td.classList.add('path'); td.textContent = f; return; }
       if (s.expanded.has(kk)) {
-        const tnorm = s.expandOrder.indexOf(kk) / maxIdx;     // 0 early … 1 late
+        const tnorm = s.expandOrder.indexOf(kk) / maxIdx;
         const r = Math.round(222 + (41 - 222) * tnorm);
         const gg = Math.round(217 + (38 - 217) * tnorm);
         const b = Math.round(203 + (30 - 203) * tnorm);
@@ -930,9 +908,13 @@ function renderAStarGrid(res) {
     });
   }
 
-  const finalLine = `A* expanded <b>${expandedCount}</b> of ${totalNodes} nodes · optimal cost <b>${totalCost.toFixed(1)}</b>`;
+  const LABELS = { dijkstra: 'Dijkstra', astar: 'A*', bfs: 'BFS' };
+  const lab = LABELS[res.mode] || 'Search';
+  const finalLine = res.mode === 'bfs'
+    ? `${lab} explored <b>${expandedCount}</b> of ${totalNodes} nodes · path cost <b>${totalCost.toFixed(1)}</b>` +
+      (res.optimalCost != null ? ` &nbsp;(optimal is ${res.optimalCost.toFixed(1)})` : '')
+    : `${lab} expanded <b>${expandedCount}</b> of ${totalNodes} nodes · optimal cost <b>${totalCost.toFixed(1)}</b>`;
 
-  // Toolbar + legend.
   const tools = $('#astarTools');
   tools.innerHTML =
     `<div class="astar-bar">
@@ -946,7 +928,6 @@ function renderAStarGrid(res) {
      </div>`;
   const status = $('#astarStatus');
 
-  // Default static view = final result.
   paint(stateAfter(events.length - 1), true);
   status.innerHTML = finalLine;
 
@@ -978,7 +959,6 @@ function renderAStarGrid(res) {
   });
 }
 
-/* ----- DP table ----- */
 function renderDpTable() {
   const t = $('#dpTable');
   t.innerHTML = '';
@@ -1006,12 +986,11 @@ function renderDpTable() {
   t.appendChild(tb);
 }
 
-/* ----- Step log ----- */
 function renderStepLog() {
   const el = $('#steplog');
   if (!state.result) { el.innerHTML = ''; return; }
   const { fingers } = state.result;
-  // show the transitions that lie on the optimal path
+
   const lines = [];
   for (let i=1; i<state.notes.length; i++) {
     const t = transitionCost(state.notes[i-1].midi, fingers[i-1], state.notes[i].midi, fingers[i]);
@@ -1025,7 +1004,6 @@ function renderStepLog() {
   el.innerHTML = lines.join('<div style="height:8px"></div>') || '<span style="opacity:.6">single note — no transitions</span>';
 }
 
-/* ----- Result panel ----- */
 function renderResult() {
   const el = $('#result');
   if (!state.result) return;
@@ -1034,32 +1012,45 @@ function renderResult() {
   const reason = mainReason(state.notes, fingers);
   const fingerStr = fingers.join(' ');
   const diffClass = diff.toLowerCase();
-  const isA = state.result.mode === 'astar';
-  const algoStat = isA
-    ? `<div class="stat"><div class="k">Algorithm</div><div class="v" style="font-size:18px">A* Search</div></div>` +
-      `<div class="stat"><div class="k">Nodes Expanded</div><div class="v">${state.result.expandedCount}<span style="font-size:15px;color:var(--text-dim)"> / ${state.result.totalNodes}</span></div></div>`
-    : `<div class="stat"><div class="k">Algorithm</div><div class="v" style="font-size:18px">DP / Viterbi</div></div>`;
+  const mode = state.result.mode;
+  const LABELS = { dp: 'DP / Viterbi', dijkstra: 'Dijkstra', astar: 'A* Search', bfs: 'BFS (baseline)' };
+  const isSearch = mode !== 'dp';
+  const algoStat =
+    `<div class="stat"><div class="k">Algorithm</div><div class="v" style="font-size:18px">${LABELS[mode]}</div></div>` +
+    (isSearch
+      ? `<div class="stat"><div class="k">Nodes Expanded</div><div class="v">${state.result.expandedCount}<span style="font-size:15px;color:var(--text-dim)"> / ${state.result.totalNodes}</span></div></div>`
+      : '');
+  let reasonHtml = reason, reasonLabel = 'Main Reason';
+  if (mode === 'bfs') {
+    reasonLabel = 'Why It Looks Wrong';
+    const opt = state.result.optimalCost;
+    reasonHtml = 'BFS ignores movement cost, so it just returns the first valid fingering it finds — here, the same finger on every note. ' +
+      `Its cost (${totalCost.toFixed(1)})` +
+      (opt != null ? ` is far higher than the optimized fingering (${opt.toFixed(1)})` : ' is needlessly high') +
+      ' — which is exactly why Piano Pathfinder uses a cost model instead.';
+  }
   el.innerHTML =
     `<div class="stat"><div class="k">Recommended Fingering</div><div class="v mono">${fingerStr}</div></div>` +
     `<div class="stat"><div class="k">Total Movement Cost</div><div class="v">${totalCost.toFixed(1)}</div></div>` +
     `<div class="stat"><div class="k">Difficulty</div><div class="v"><span class="pill ${diffClass}">${diff}</span></div></div>` +
     algoStat +
-    `<div class="reason-box"><div class="k">Main Reason</div>${reason}</div>`;
+    `<div class="reason-box"><div class="k">${reasonLabel}</div>${reasonHtml}</div>`;
 }
 
-/* ----- Orchestration ----- */
 function runOptimize(reparse = true) {
   showError('');
   try {
     if (reparse) state.notes = parseNotes($('#notes').value);
     if (reparse) {
-      // drop locks that fall outside the new note list
+
       Object.keys(state.locks).forEach(k => { if (+k >= state.notes.length) delete state.locks[k]; });
     }
     const mode = $('#algo').value;
-    state.result = (mode === 'astar')
-      ? optimizeAStar(state.notes, state.locks)
-      : optimize(state.notes, state.locks, 'dp');
+    state.result =
+      mode === 'astar'    ? frontierSearch(state.notes, state.locks, true, 'astar') :
+      mode === 'dijkstra' ? frontierSearch(state.notes, state.locks, false, 'dijkstra') :
+      mode === 'bfs'      ? optimizeBFS(state.notes, state.locks) :
+                            optimize(state.notes, state.locks, 'dp');
     renderKeyboard();
     renderPathStrip();
     renderAlgoPanel();
@@ -1078,7 +1069,6 @@ function runOptimize(reparse = true) {
   }
 }
 
-/* ----- Audio (Web Audio API) ----- */
 function ensureAudio() {
   if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   return state.audioCtx;
@@ -1096,7 +1086,7 @@ function playMidi(midi, durMs) {
   gain.gain.exponentialRampToValueAtTime(0.0001, now + durMs/1000);
   osc.connect(gain).connect(ctx.destination);
   osc.start(now); osc.stop(now + durMs/1000 + 0.02);
-  // flash the key
+
   const k = document.querySelector('.key[data-midi="'+midi+'"]');
   if (k) { k.classList.add('playing'); setTimeout(()=>k.classList.remove('playing'), Math.min(durMs, 400)); }
 }
@@ -1116,7 +1106,6 @@ function playMelody() {
   step();
 }
 
-/* ----- Presets ----- */
 function renderPresets() {
   const wrap = $('#presets');
   wrap.innerHTML = '';
@@ -1133,7 +1122,6 @@ function renderPresets() {
   });
 }
 
-/* ----- Wire up ----- */
 $('#run').addEventListener('click', () => { runOptimize(true); });
 $('#play').addEventListener('click', playMelody);
 $('#clearLocks').addEventListener('click', () => { state.locks = {}; runOptimize(false); });
@@ -1144,6 +1132,7 @@ $('#notes').addEventListener('keydown', e => {
 
 renderPresets();
 runOptimize(true);
+
 </script>
 </body>
 </html>
