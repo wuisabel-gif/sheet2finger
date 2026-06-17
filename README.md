@@ -96,18 +96,22 @@ Supports sharps (`F#4`), flats (`Bb4`), and spaces or commas between notes.
 - Click any key to hear the note
 - Visual display of the recommended path
 
-**Fingering Optimization**
+**Fingering Optimization** — the same problem, solved four ways:
 
-- Dynamic Programming (Viterbi-style)
-- Optional A\* graph-search mode
-- Real hand-position cost model
+- **Dynamic Programming** (Viterbi-style) — the instant, default solver
+- **Dijkstra** — uniform-cost search; finds the same optimum, explores more nodes
+- **A\*** — Dijkstra plus an admissible heuristic, so it heads toward the goal and
+  expands fewer nodes
+- **BFS** — a deliberately *naive baseline* that ignores comfort entirely; included
+  to show why a cost model is needed (see below)
+- a real hand-position cost model underneath all of them
 
-**Algorithm Explorer** — see exactly how the optimizer reaches its decision:
+**Algorithm Explorer** — see exactly how each solver reaches its decision:
 
-- DP cost table
-- Optimal path highlighting
-- Transition-by-transition cost breakdown
-- A\* frontier visualization and animation
+- DP cost table with optimal path highlighting
+- transition-by-transition cost breakdown
+- animated frontier visualization for Dijkstra, A\*, and BFS, with a live
+  "nodes expanded / total" count so you can compare how hard each one works
 
 **Interactive Editing** — don't agree with a fingering? Lock any finger choice and
 the optimizer recomputes the rest of the passage around your preference.
@@ -147,8 +151,9 @@ a sensible starting point that respects both the music and the mechanics of the 
 
 ```text
 sheet2finger/
-├── index.html      # Entire application
+├── index.html        # Entire application
 ├── README.md
+├── CONTRIBUTING.md
 └── .claude/
     └── launch.json
 ```
