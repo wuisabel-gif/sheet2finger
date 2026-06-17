@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Piano Pathfinder — Fingering Optimizer</title>
+<style>
+  /* ============================================================
+     Piano Pathfinder — "nostalgic" monochrome theme
+     Aged paper & ink · strictly black, white and grayscale.
+     ============================================================ */
+  :root {
+    /* surfaces (warm-neutral, fully desaturated = black & white) */
+    --bg:            #e4e0d4;   /* page — aged paper          */
+    --bg-2:          #ded9cb;
+    --panel:         #efece2;   /* card — lighter leaf        */
+    --panel-2:       #e6e2d5;
+    --ivory:         #faf8f0;   /* white keys / paper white   */
+    --ivory-dim:     #e7e3d6;
+    --ebony:         #1f1e1a;   /* black keys / ink surfaces  */
+    /* ink + grays (legacy accent names remapped to monochrome) */
+    --gold:          #211f1a;   /* primary "accent" = ink     */
+    --gold-soft:     #4a463c;   /* headings / code            */
+    --blue:          #232019;   /* finger marker fill = ink   */
+    --blue-soft:     #6c6557;
+    --blue-glow:     rgba(31,30,26,.20);
+    --text:          #211f1a;
+    --text-dim:      #6a6356;
+    --text-faint:    #948d7d;
+    --line:          #cbc4b3;
+    --hair:          #d9d3c3;
+    --green:         #2c2a23;
+    --amber:         #5a5447;
+    --red:           #211f1a;
+    --radius:        4px;
+    --shadow:        0 10px 30px rgba(40,37,30,.16);
+    --mono: 'Courier New', Courier, 'Nimbus Mono PS', 'Liberation Mono', monospace;
+    --serif: 'Hoefler Text', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Times New Roman', serif;
+    --sans: var(--serif);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    color: var(--text);
+    background: var(--bg);
+    min-height: 100vh;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+  /* film grain + vignette — the nostalgic texture */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    opacity: .055; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 25%, transparent 55%, rgba(30,28,22,.20) 100%);
+  }
+  a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+  a:hover { border-bottom-color: var(--text); }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 90px; position: relative; z-index: 1; }
+
+  /* ---------- Hero ---------- */
+  header.hero { text-align: center; padding: 70px 24px 26px; position: relative; z-index: 1; }
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .34em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 7px 4px 9px;
+    margin-bottom: 14px;
+    border-top: 1px solid var(--text);
+    border-bottom: 1px solid var(--text);
+  }
+  h1.title {
+    font-family: var(--serif);
+    font-size: clamp(42px, 8vw, 82px);
+    margin: 6px 0 6px;
+    font-weight: 600;
+    letter-spacing: -.012em;
+    color: var(--text);
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  }
+  h1.title::first-letter { }
+  .subtitle {
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 6px auto 0;
+    font-size: 18px;
+    font-style: italic;
+  }
+  .subtitle b { color: var(--text); font-weight: 600; font-style: normal; }
+  /* fleuron divider under the hero */
+  header.hero::after {
+    content: "❧";
+    display: block;
+    margin: 26px auto 0;
+    font-size: 26px;
+    color: var(--text-dim);
+    line-height: 1;
+  }
+
+  /* ---------- Panels ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow), inset 0 0 0 3px var(--panel), inset 0 0 0 4px var(--hair);
+    padding: 26px 26px 28px;
+    margin-bottom: 26px;
+    position: relative;
+  }
+  .panel h2 {
+    margin: 0 0 4px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--text);
+    display: flex; align-items: center; gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 8px;
+  }
+  .panel h2 .n {
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    border: 1.5px solid var(--text);
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    flex: 0 0 auto;
+    letter-spacing: 0;
+  }
+  .panel .hint { color: var(--text-dim); font-size: 14.5px; margin: 12px 0 20px; font-style: italic; }
+  .panel .hint code, code {
+    font-family: var(--mono) !important;
+    color: var(--text) !important;
+    font-style: normal;
+    background: var(--ivory-dim);
+    padding: 1px 6px; border-radius: 3px;
+    border: 1px solid var(--hair);
+    font-size: .92em;
+  }
+
+  /* ---------- Input ---------- */
+  .input-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: stretch; }
+  textarea#notes {
+    flex: 1 1 420px;
+    min-height: 76px;
+    resize: vertical;
+    font-family: var(--mono);
+    font-size: 17px;
+    letter-spacing: .06em;
+    color: var(--text);
+    background: var(--ivory);
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    line-height: 1.8;
+    box-shadow: inset 0 2px 5px rgba(40,37,30,.10);
+  }
+  textarea#notes:focus { outline: none; box-shadow: inset 0 2px 5px rgba(40,37,30,.10), 0 0 0 2px var(--text); }
+  .controls { display: flex; flex-direction: column; gap: 11px; min-width: 200px; }
+
+  button, select {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    border-radius: var(--radius);
+    border: 1px solid var(--text);
+    background: var(--panel);
+    color: var(--text);
+    padding: 13px 18px;
+    cursor: pointer;
+    transition: .14s ease;
+    font-weight: 700;
+  }
+  button:hover, select:hover { background: var(--text); color: var(--ivory); }
+  button.primary { background: var(--text); color: var(--ivory); }
+  button.primary:hover { background: var(--ebony); }
+  button.ghost { background: transparent; }
+  button:active { transform: translateY(1px); }
+
+  .opts { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; margin-top: 18px; color: var(--text-dim); font-size: 13px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+  .opts label { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; }
+  .opts select { padding: 8px 12px; font-size: 11.5px; }
+
+  .err { color: var(--text); font-size: 13px; margin-top: 12px; font-family: var(--mono); min-height: 17px; font-weight: 700; }
+  .err:not(:empty)::before { content: "✗ "; }
+
+  /* ---------- Keyboard ---------- */
+  .kb-scroll { overflow-x: auto; padding: 10px 2px 12px; }
+  .keyboard { position: relative; height: 196px; user-select: none; filter: drop-shadow(0 8px 14px rgba(40,37,30,.22)); }
+  .key { position: absolute; bottom: 0; border-radius: 0 0 3px 3px; cursor: pointer; transition: background .12s, box-shadow .12s; }
+  .key.white {
+    background: linear-gradient(180deg, #fffdf6 0%, var(--ivory) 70%, var(--ivory-dim) 100%);
+    border: 1px solid #2a2620;
+    box-shadow: inset 0 -7px 9px rgba(40,37,30,.10);
+    z-index: 1;
+  }
+  .key.black {
+    background: linear-gradient(180deg, #3a3730 0%, var(--ebony) 100%);
+    border: 1px solid #000;
+    box-shadow: inset 0 -4px 6px rgba(255,255,255,.07), 0 4px 7px rgba(0,0,0,.45);
+    z-index: 2;
+  }
+  .key.active.white { background: linear-gradient(180deg,#efe9d8,#d8d2c0); border-color: #000; }
+  .key.active.white::before { content:""; position:absolute; top:0; left:0; right:0; height:4px; background:var(--text); }
+  .key.active.black { background: linear-gradient(180deg,#56524a,#2c2a24); }
+  .key.playing { box-shadow: 0 0 0 3px var(--text), 0 0 18px rgba(31,30,26,.5) !important; }
+  .key .lbl {
+    position: absolute; left: 0; right: 0; bottom: 7px;
+    text-align: center; font-family: var(--mono); font-size: 10px;
+    color: #8a8472; pointer-events: none; letter-spacing: .02em;
+  }
+  .key.black .lbl { color: #b3ad9b; }
+  .key .finger {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    top: 10px;
+    width: 24px; height: 24px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--serif); font-weight: 700; font-size: 13px;
+    background: var(--text); color: var(--ivory);
+    border: 1.5px solid var(--ivory);
+    box-shadow: 0 1px 4px rgba(0,0,0,.4);
+    pointer-events: none;
+  }
+  .key.black .finger { top: 7px; }
+  .kb-legend { display:flex; gap:20px; flex-wrap:wrap; margin-top:16px; color:var(--text-dim); font-size:12px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; }
+  .kb-legend .dot { display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:7px; vertical-align:-1px; border:1px solid var(--text); }
+
+  /* ---------- Path strip ---------- */
+  .pathstrip { display:flex; gap:9px; flex-wrap:wrap; margin-top:22px; }
+  .pp {
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    background: var(--ivory); border:1px solid var(--text);
+    border-radius:var(--radius); padding:10px 6px 9px; min-width:62px; flex:0 0 auto;
+    cursor:pointer; transition:.12s;
+  }
+  .pp:hover { background: var(--ivory-dim); }
+  .pp.locked { box-shadow: 0 0 0 1px var(--text) inset; border-style: double; border-width: 3px; }
+  .pp .note { font-family:var(--mono); font-size:12.5px; color:var(--text); }
+  .pp .fcircle {
+    width:32px; height:32px; border-radius:50%;
+    display:grid; place-items:center; font-weight:700; font-family:var(--serif); font-size:15px;
+    background: var(--text); color:var(--ivory); border:1.5px solid var(--text);
+  }
+  .pp.locked .fcircle { background: var(--ivory); color:var(--text); }
+  .pp .pos { font-size:9.5px; color:var(--text-dim); font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; }
+
+  /* ---------- Algorithm panel ---------- */
+  .algo-grid { display:grid; grid-template-columns: 1fr; gap:22px; }
+  @media (min-width: 820px){ .algo-grid { grid-template-columns: 1.4fr 1fr; } }
+  .dp-table-wrap { overflow-x:auto; border:1px solid var(--text); border-radius:var(--radius); background:var(--ivory); }
+  table.dp { border-collapse: collapse; width:100%; font-family:var(--mono); font-size:12.5px; }
+  table.dp th, table.dp td { padding:8px 10px; text-align:center; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.dp thead th { color:var(--text); background:var(--ivory-dim); position:sticky; top:0; text-transform:uppercase; letter-spacing:.04em; font-size:11px; border-bottom:1.5px solid var(--text); }
+  table.dp td.note-h { color:var(--text); text-align:left; border-right:1px solid var(--line); font-weight:700; }
+  table.dp td.cell { color:var(--text-dim); }
+  table.dp td.cell.best { color:var(--ivory); background:var(--text); font-weight:700; }
+  table.dp td.cell.inf { color:var(--text-faint); opacity:.55; }
+  table.dp tbody tr:last-child td { border-bottom:none; }
+  .reasons { font-size:13px; color:var(--text-dim); }
+  .reasons > strong { font-family:var(--mono); text-transform:uppercase; letter-spacing:.14em; font-size:11.5px; color:var(--text) !important; display:block; margin-bottom:10px; }
+  .steplog {
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    background:var(--ivory); border:1px solid var(--text); border-radius:var(--radius);
+    padding:14px 16px; max-height:248px; overflow:auto; line-height:1.75;
+  }
+  .steplog .ar { color:var(--text); font-weight:700; }
+  .steplog b { color:var(--text); font-weight:700; }
+
+  /* ---------- A* frontier viz ---------- */
+  table.dp td.cell.path { background:var(--text); color:var(--ivory); font-weight:700; }
+  table.dp td.cell.expanded { font-weight:600; }
+  table.dp td.cell.frontier { color:var(--text); border:1px dashed var(--text); font-style:italic; background:repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(31,30,26,.07) 4px, rgba(31,30,26,.07) 5px); }
+  table.dp td.cell.unreached { color:var(--text-faint); }
+  table.dp td.cell.current { box-shadow: inset 0 0 0 2px var(--text); }
+  .astar-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .astar-bar button { padding:9px 14px; font-size:11px; }
+  .astar-legend { display:flex; gap:16px; flex-wrap:wrap; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); }
+  .astar-legend .lg { display:inline-flex; align-items:center; gap:6px; }
+  .astar-legend .sw { width:16px; height:13px; display:inline-block; border:1px solid var(--text); }
+  .astar-legend .sw.ramp { background:linear-gradient(90deg, rgb(222 217 203), rgb(41 38 30)); }
+  .astar-legend .sw.fr { background:repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(31,30,26,.3) 3px, rgba(31,30,26,.3) 4px); border-style:dashed; }
+  .astar-legend .sw.pa { background:var(--text); }
+  .astar-status { margin-top:14px; font-family:var(--mono); font-size:12px; color:var(--text-dim); border-top:1px solid var(--line); padding-top:12px; min-height:18px; }
+  .astar-status b { color:var(--text); }
+
+  /* ---------- Result ---------- */
+  .result-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap:18px; }
+  .stat { background:var(--ivory); border:1px solid var(--text); border-radius:var(--radius); padding:18px 20px; }
+  .stat .k { font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--text-dim); margin-bottom:9px; font-family:var(--mono); }
+  .stat .v { font-size:30px; font-weight:600; letter-spacing:-.01em; font-family:var(--serif); }
+  .stat .v.mono { font-family:var(--mono); font-size:23px; color:var(--text); letter-spacing:.1em; font-weight:700; }
+  .pill { display:inline-block; padding:5px 16px; border-radius:999px; font-size:13px; font-weight:700; font-family:var(--mono); text-transform:uppercase; letter-spacing:.1em; border:1.5px solid var(--text); }
+  .pill.easy { background:transparent; color:var(--text); }
+  .pill.medium { background:var(--blue-soft); color:var(--ivory); border-color:var(--blue-soft); }
+  .pill.hard { background:var(--text); color:var(--ivory); }
+  .reason-box { grid-column: 1 / -1; background:var(--ivory); border:1px solid var(--text); border-left:5px solid var(--text); border-radius:var(--radius); padding:16px 20px; color:var(--text); font-size:15.5px; font-style:italic; }
+  .reason-box .k { color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:.14em; margin-bottom:7px; font-family:var(--mono); font-style:normal; }
+
+  /* ---------- Presets ---------- */
+  .presets { display:flex; gap:11px; flex-wrap:wrap; }
+  .preset {
+    background:transparent; border:1px solid var(--text); border-radius:999px;
+    padding:10px 18px; font-size:12px; cursor:pointer; transition:.14s;
+    font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; font-weight:700;
+  }
+  .preset:hover { background:var(--text); color:var(--ivory); }
+
+  /* ---------- Explain ---------- */
+  .explain { color:var(--text-dim); font-size:15px; }
+  .explain h3 { color:var(--text); font-size:18px; margin:6px 0 8px; font-weight:600; font-style:italic; }
+  .explain .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:26px; }
+  .explain .cols > div { border-top:1px solid var(--line); padding-top:14px; }
+
+  footer { text-align:center; color:var(--text-dim); font-size:13.5px; padding:36px 0 12px; margin-top:48px; position:relative; }
+  footer::before { content:"❧"; display:block; font-size:22px; color:var(--text-dim); margin-bottom:18px; }
+  footer .tagline { font-style:italic; margin-bottom:10px; }
+  footer .cr { font-family:var(--mono); color:var(--text); font-size:12.5px; letter-spacing:.06em; }
+  footer .cr a { font-weight:700; }
+
+  .empty { color:var(--text-dim); font-size:15px; font-style:italic; padding:10px 0; }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="badge">For students, teachers &amp; curious pianists</div>
+  <h1 class="title">Piano Pathfinder</h1>
+  <p class="subtitle">
+    <b>Find comfortable piano fingerings automatically.</b> Type in a melody and
+    Piano Pathfinder suggests a fingering that minimizes awkward stretches,
+    unnecessary hand movement, and difficult finger crossings — then lets you see
+    it on the keyboard, lock in the choices you prefer, and explore alternatives.
+  </p>
+</header>
+
+<div class="wrap">
+
+  <section class="panel">
+    <h2><span class="n">1</span> Enter a Melody</h2>
+    <p class="hint">Type a right-hand melody using note names —
+      <code>C4 D4 E4 F4 G4 A4 B4 C5</code>. You can use sharps (<code>F#4</code>),
+      flats (<code>Bb4</code>), and spaces or commas between notes. Then click
+      <b>Optimize Fingering</b> to generate a recommendation.</p>
+    <div class="input-row">
+      <textarea id="notes" spellcheck="false">C4 D4 E4 F4 G4 A4 B4 C5</textarea>
+      <div class="controls">
+        <button class="primary" id="run">Optimize Fingering</button>
+        <button class="ghost" id="play">▶ Play Melody</button>
+        <button class="ghost" id="clearLocks">⟲ Clear Finger Locks</button>
+      </div>
+    </div>
+    <div class="opts">
+      <label>Analysis:
+        <select id="algo">
+          <option value="dp">Best fingering (instant)</option>
+          <option value="astar">Watch it search (animated)</option>
+        </select>
+      </label>
+      <label>Tempo:
+        <select id="tempo">
+          <option value="500">Slow</option>
+          <option value="320" selected>Medium</option>
+          <option value="200">Fast</option>
+        </select>
+      </label>
+    </div>
+    <div class="err" id="err"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="n">2</span> Keyboard View</h2>
+    <p class="hint">The keyboard shows the suggested fingering for every note —
+      1 = thumb · 2 = index · 3 = middle · 4 = ring · 5 = pinky.
+      Prefer a different finger? Click its number on a chip below to lock it in,
+      and the app recalculates the rest of the fingering around your choice.</p>
+    <div class="kb-scroll"><div class="keyboard" id="keyboard"></div></div>
+    <div class="kb-legend">
+      <span><span class="dot" style="background:#cbc4b3"></span>Notes in path</span>
+      <span><span class="dot" style="background:#211f1a"></span>Finger marker</span>
+      <span><span class="dot" style="background:var(--ivory)"></span>Currently playing</span>
+    </div>
+    <div class="pathstrip" id="pathstrip"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="n">3</span> Why This Fingering?</h2>
+    <p class="hint">Piano fingering is a balancing act between comfort, efficiency,
+      and musical flow. The app weighs many possible finger combinations and
+      chooses the one that takes the least overall effort — accounting for hand
+      movement, finger stretches, thumb-under motions, crossings, and position
+      changes. Open the analysis below to see how the decision was made, step by step.</p>
+    <p class="hint" id="algoHint"></p>
+    <div class="algo-grid">
+      <div>
+        <div id="astarTools"></div>
+        <div class="dp-table-wrap"><table class="dp" id="dpTable"></table></div>
+        <div id="astarStatus" class="astar-status"></div>
+      </div>
+      <div>
+        <div class="reasons">
+          <strong>Step-by-step analysis</strong>
+          <div class="steplog" id="steplog"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="n">4</span> Recommended Fingering</h2>
+    <div class="result-grid" id="result">
+      <div class="empty">Enter a melody and click Optimize Fingering to see a recommendation.</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="n">5</span> Try Examples</h2>
+    <p class="hint">Explore common patterns — each one loads instantly so you can
+      compare different fingering strategies.</p>
+    <div class="presets" id="presets"></div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="n">6</span> How It Works</h2>
+    <div class="explain">
+      <p style="margin-top:0">Think of it like trying every reasonable fingering and
+        choosing the most comfortable one. Instead of guessing, Piano Pathfinder
+        compares thousands of possibilities behind the scenes and picks the option
+        that keeps your hand moving naturally across the keyboard.</p>
+      <div class="cols">
+        <div>
+          <h3>Many ways are valid</h3>
+          The goal isn't the one “correct” fingering — plenty of passages can be
+          played several ways. This gives you a strong starting point that follows
+          common piano-technique principles.
+        </div>
+        <div>
+          <h3>You stay in control</h3>
+          Lock any finger you like and the rest re-adjusts around it, so the
+          suggestion bends to the way <i>you</i> want to play the passage.
+        </div>
+        <div>
+          <h3>Made to learn from</h3>
+          Built for students, teachers, and curious pianists who want to understand
+          not just <i>what</i> fingering to use, but <i>why</i> it works.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="cr">© 2026 <a href="https://github.com/wuisabel-gif" target="_blank" rel="noopener">wuisabel-gif</a> · All rights reserved.</div>
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   Piano Pathfinder — single-file build
+   Modules (conceptual): noteParser · costFunction ·
+   fingeringOptimizer · presets · UI
+   ============================================================ */
+
+/* ---------- noteParser ---------- */
+const NOTE_TO_SEMITONE = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+
+function noteToMidi(token) {
+  const m = token.trim().match(/^([A-Ga-g])([#b]?)(-?\d)$/);
+  if (!m) return null;
+  const letter = m[1].toUpperCase();
+  let semis = NOTE_TO_SEMITONE[letter];
+  if (m[2] === '#') semis += 1;
+  if (m[2] === 'b') semis -= 1;
+  const octave = parseInt(m[3], 10);
+  // MIDI: C4 = 60  (octave+1)*12 + semitone
+  return (octave + 1) * 12 + semis;
+}
+
+const SHARP_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+function midiToName(midi) {
+  const name = SHARP_NAMES[((midi % 12) + 12) % 12];
+  const octave = Math.floor(midi / 12) - 1;
+  return name + octave;
+}
+
+function parseNotes(text) {
+  const tokens = text.split(/[\s,]+/).map(t => t.trim()).filter(Boolean);
+  const notes = [];
+  for (const tok of tokens) {
+    const midi = noteToMidi(tok);
+    if (midi === null) throw new Error('Could not parse note: "' + tok + '"');
+    if (midi < 21 || midi > 108) throw new Error('Note out of piano range: "' + tok + '"');
+    notes.push({ name: midiToName(midi), token: tok, midi, index: notes.length });
+  }
+  if (notes.length === 0) throw new Error('Enter at least one note.');
+  if (notes.length > 40) throw new Error('Keep passages under 40 notes for the visualizer.');
+  return notes;
+}
+
+/* ---------- costFunction ----------
+   Movement cost of moving the right hand from playing `fromMidi`
+   with `fromFinger` to `toMidi` with `toFinger`. Returns {cost, reasons}.
+
+   Core idea — a HAND-POSITION model. When the hand is relaxed in a five-finger
+   position, each finger sits over a neutral semitone offset (REST). To keep the
+   hand still, the interval between two notes "should" equal the difference of
+   those fingers' rest offsets. Whatever interval is left over is hand
+   DISPLACEMENT — the wrist physically sliding — and that is the dominant cost.
+   This makes scales naturally prefer thumb-under crossings over impossible
+   same-position stretches. */
+const REST = { 1: 0, 2: 2, 3: 4, 4: 6, 5: 8 };  // neutral semitone offsets, RH
+const MAX_SPAN = 13;                              // beyond an octave+1 is a leap/jump
+
+function transitionCost(fromMidi, fromFinger, toMidi, toFinger) {
+  const interval = toMidi - fromMidi;             // signed semitones
+  const dist = Math.abs(interval);
+  const reasons = [];
+
+  // Repeated note on the same finger: ideal — hold it.
+  if (fromFinger === toFinger && dist === 0) {
+    return { cost: 0, reasons: ['finger held on repeated note (free)'] };
+  }
+
+  const expected = REST[toFinger] - REST[fromFinger]; // interval that keeps hand still
+  const displacement = interval - expected;           // wrist slide required
+  let cost = Math.abs(displacement) * 0.9;            // dominant term
+  if (Math.abs(displacement) <= 1) {
+    reasons.push('hand stays in position (smooth)');
+  } else {
+    reasons.push(`hand shifts ${Math.abs(displacement)} semitone(s) (${(Math.abs(displacement)*0.9).toFixed(1)})`);
+  }
+
+  const ascending = interval > 0;
+
+  // Crossings: thumb-under when ascending, finger-over when descending — these
+  // are the maneuvers that let scales run. Allowed, but carry a real cost.
+  const thumbUnder  = ascending  && toFinger === 1 && fromFinger >= 2;
+  const fingerOver  = !ascending && fromFinger === 1 && toFinger >= 3;
+  if (thumbUnder) { cost += 1.2; reasons.push('thumb-under crossing (+1.2)'); }
+  if (fingerOver) { cost += 1.2; reasons.push('finger-over crossing (+1.2)'); }
+
+  // Same finger forced onto a different note (no crossing benefit): must lift
+  // and re-place — extra friction on top of the displacement already charged.
+  if (fromFinger === toFinger && dist > 0) {
+    cost += 2; reasons.push('same finger re-articulated on a moving note (+2)');
+  }
+
+  // "Tangled" fingering without a sanctioned crossing: e.g. a higher finger
+  // landing on a lower note (or vice-versa) when it isn't a thumb-under /
+  // finger-over. Physically cramped.
+  if (!thumbUnder && !fingerOver && fromFinger !== toFinger) {
+    if ((ascending && toFinger < fromFinger) || (!ascending && toFinger > fromFinger)) {
+      cost += 2.5; reasons.push('crossed fingers without a valid pivot (+2.5)');
+    }
+  }
+
+  // Cramped thumb↔pinky on a tiny interval.
+  if (((fromFinger === 1 && toFinger === 5) || (fromFinger === 5 && toFinger === 1)) && dist < 3) {
+    cost += 2; reasons.push('cramped thumb↔pinky on a small interval (+2)');
+  }
+
+  // Big leaps strain the hand regardless of fingering.
+  if (dist > MAX_SPAN) { cost += (dist - MAX_SPAN) * 1.0 + 2; reasons.push('large leap beyond an octave (+)'); }
+
+  return { cost: Math.max(cost, 0), reasons };
+}
+
+/* Small static preference for which finger lands on a note in isolation —
+   keeps ties stable and gently favors the strong middle fingers. */
+function noteFingerBias(finger) {
+  return [0, 0.15, 0, 0, 0.1, 0.3][finger]; // thumb & pinky slightly disfavored at rest
+}
+
+/* ---------- fingeringOptimizer ----------
+   Viterbi-style DP / single-source shortest path over the finger-state graph.
+   `locks` maps noteIndex -> finger (1..5) to constrain the search. */
+function optimize(notes, locks, mode) {
+  const N = notes.length;
+  const FINGERS = [1,2,3,4,5];
+  const INF = Infinity;
+
+  // cost[i][f], back[i][f] = best previous finger
+  const cost = Array.from({length:N}, () => new Array(6).fill(INF));
+  const back = Array.from({length:N}, () => new Array(6).fill(0));
+  const allowed = (i, f) => !(locks[i] && locks[i] !== f);
+
+  // Layer 0
+  for (const f of FINGERS) {
+    if (allowed(0, f)) cost[0][f] = noteFingerBias(f);
+  }
+
+  const log = [];
+
+  for (let i = 1; i < N; i++) {
+    for (const f of FINGERS) {
+      if (!allowed(i, f)) continue;
+      let best = INF, bestPrev = 0, bestReasons = [];
+      for (const pf of FINGERS) {
+        if (cost[i-1][pf] === INF) continue;
+        const t = transitionCost(notes[i-1].midi, pf, notes[i].midi, f);
+        const total = cost[i-1][pf] + t.cost + noteFingerBias(f);
+        if (total < best) { best = total; bestPrev = pf; bestReasons = t.reasons; }
+      }
+      cost[i][f] = best;
+      back[i][f] = bestPrev;
+      if (best < INF) {
+        log.push({ i, note: notes[i].name, prevNote: notes[i-1].name,
+                   from: bestPrev, to: f, cost: best, reasons: bestReasons });
+      }
+    }
+  }
+
+  // Pick best final finger
+  let endFinger = 1, endCost = INF;
+  for (const f of FINGERS) {
+    if (cost[N-1][f] < endCost) { endCost = cost[N-1][f]; endFinger = f; }
+  }
+  if (endCost === INF) throw new Error('No valid fingering — check your finger locks.');
+
+  // Back-trace
+  const fingers = new Array(N);
+  let f = endFinger;
+  for (let i = N-1; i >= 0; i--) { fingers[i] = f; f = back[i][f]; }
+
+  return { fingers, cost, totalCost: endCost, log, mode };
+}
+
+/* ---------- A* search ----------
+   The SAME layered finger-state graph as the DP, but explored with A*.
+
+   Heuristic — h(i) = sum of the per-transition MINIMUM edge costs over every
+   remaining note transition. Each future transition must cost at least its
+   cheapest finger pairing, so the running sum is a lower bound on the true
+   remaining cost: the heuristic never overestimates (ADMISSIBLE). It is also
+   CONSISTENT, because h(i) = minTrans[i] + h(i+1) ≤ edge(i→i+1) + h(i+1).
+   Consistency means the first goal node popped from the frontier is provably
+   optimal — no re-expansion needed.
+
+   We record an `events` timeline (discover / expand) so the UI can animate the
+   frontier exactly as A* explored it. */
+function optimizeAStar(notes, locks) {
+  const N = notes.length;
+  const FINGERS = [1,2,3,4,5];
+  const allowed = (i,f) => !(locks[i] && locks[i] !== f);
+  const edgeCost = (i, fa, fb) =>
+    transitionCost(notes[i].midi, fa, notes[i+1].midi, fb).cost + noteFingerBias(fb);
+
+  // Admissible + consistent heuristic via suffix sums of per-transition minima.
+  const hSuffix = new Array(N).fill(0);
+  for (let i = N-2; i >= 0; i--) {
+    let mn = Infinity;
+    for (const fa of FINGERS) { if (!allowed(i,fa)) continue;
+      for (const fb of FINGERS) { if (!allowed(i+1,fb)) continue;
+        const c = edgeCost(i, fa, fb); if (c < mn) mn = c; } }
+    hSuffix[i] = (mn === Infinity ? 0 : mn) + hSuffix[i+1];
+  }
+  const h = i => hSuffix[i];
+
+  const key = (i,f) => i*6 + f;
+  const g = new Map(), came = new Map(), fOf = new Map();
+  const open = [], closed = new Set();
+  const events = [];
+
+  function discover(i, f, gv) {
+    const k = key(i,f);
+    g.set(k, gv); fOf.set(k, gv + h(i));
+    open.push(k);
+    events.push({ type:'discover', i, f, g: gv, fScore: gv + h(i) });
+  }
+  for (const f of FINGERS) if (allowed(0,f)) discover(0, f, noteFingerBias(f));
+
+  let goalKey = null;
+  while (open.length) {
+    // extract-min by f-score (small graph — linear scan is plenty fast)
+    let bi = 0;
+    for (let x = 1; x < open.length; x++) if (fOf.get(open[x]) < fOf.get(open[bi])) bi = x;
+    const k = open.splice(bi, 1)[0];
+    if (closed.has(k)) continue;
+    closed.add(k);
+    const i = Math.floor(k/6), f = k - i*6;
+    events.push({ type:'expand', i, f, g: g.get(k), h: h(i), fScore: fOf.get(k) });
+    if (i === N-1) { goalKey = k; break; }   // first goal popped is optimal
+    for (const f2 of FINGERS) {
+      if (!allowed(i+1, f2) || closed.has(key(i+1,f2))) continue;
+      const k2 = key(i+1, f2);
+      const tentative = g.get(k) + edgeCost(i, f, f2);
+      if (!g.has(k2) || tentative < g.get(k2)) { came.set(k2, k); discover(i+1, f2, tentative); }
+    }
+  }
+  if (goalKey === null) throw new Error('No valid fingering — check your finger locks.');
+
+  const fingers = new Array(N);
+  for (let cur = goalKey; cur !== undefined; cur = came.get(cur)) {
+    const i = Math.floor(cur/6); fingers[i] = cur - i*6;
+  }
+  let totalNodes = 0;
+  for (let i = 0; i < N; i++) for (const f of FINGERS) if (allowed(i,f)) totalNodes++;
+  const expandedCount = events.filter(e => e.type === 'expand').length;
+  return { fingers, totalCost: g.get(goalKey), events, expandedCount, totalNodes, cost: null, mode: 'astar' };
+}
+
+/* ---------- difficulty + reason ---------- */
+function difficultyOf(totalCost, n) {
+  const perNote = totalCost / Math.max(n - 1, 1);
+  if (perNote < 2.4) return 'Easy';
+  if (perNote < 4.2) return 'Medium';
+  return 'Hard';
+}
+function mainReason(notes, fingers) {
+  for (let i = 1; i < notes.length; i++) {
+    const interval = notes[i].midi - notes[i-1].midi;
+    if (interval > 0 && fingers[i] === 1 && fingers[i-1] >= 2)
+      return 'A thumb-under transition keeps the hand position compact while ascending.';
+    if (interval < 0 && fingers[i-1] === 1 && fingers[i] >= 3)
+      return 'A finger-over crossing lets the line continue downward smoothly.';
+  }
+  const span = Math.max(...notes.map(n=>n.midi)) - Math.min(...notes.map(n=>n.midi));
+  if (span <= 7) return 'The passage fits within a five-finger hand position — minimal movement required.';
+  return 'Fingers ascend and descend in natural order, minimizing hand displacement.';
+}
+
+/* ---------- presets ---------- */
+const PRESETS = {
+  'C Major Scale':  'C4 D4 E4 F4 G4 A4 B4 C5',
+  'G Major Scale':  'G4 A4 B4 C5 D5 E5 F#5 G5',
+  'Chromatic Scale':'C4 C#4 D4 D#4 E4 F4 F#4 G4 G#4 A4 A#4 B4 C5',
+  'Simple Arpeggio':'C4 E4 G4 C5 G4 E4 C4',
+  'Für Elise Opening':'E5 D#5 E5 D#5 E5 B4 D5 C5 A4'
+};
+
+/* ============================================================
+   UI / RENDERING
+   ============================================================ */
+const $ = sel => document.querySelector(sel);
+let state = { notes: [], result: null, locks: {}, audioCtx: null };
+
+function showError(msg) { $('#err').textContent = msg || ''; }
+
+/* ----- Keyboard rendering (dynamic range based on notes) ----- */
+const WHITE_W = 38, WHITE_H = 196, BLACK_W = 24, BLACK_H = 120;
+const isBlack = m => [1,3,6,8,10].includes(((m%12)+12)%12);
+
+function renderKeyboard() {
+  const kb = $('#keyboard');
+  kb.innerHTML = '';
+  const notes = state.notes;
+  if (!notes.length) { kb.style.width = '600px'; return; }
+
+  let lo = Math.min(...notes.map(n=>n.midi)) - 2;
+  let hi = Math.max(...notes.map(n=>n.midi)) + 2;
+  // snap to white-key boundaries
+  while (isBlack(lo)) lo--;
+  while (isBlack(hi)) hi++;
+
+  // Map: assign x to white keys sequentially; black keys sit between.
+  const whiteX = {};
+  let wi = 0;
+  for (let m = lo; m <= hi; m++) {
+    if (!isBlack(m)) { whiteX[m] = wi * WHITE_W; wi++; }
+  }
+  const totalW = wi * WHITE_W;
+  kb.style.width = totalW + 'px';
+
+  const fingerByMidi = {};
+  if (state.result) {
+    notes.forEach((n,i) => { fingerByMidi[n.midi] = state.result.fingers[i]; });
+  }
+  const activeSet = new Set(notes.map(n=>n.midi));
+
+  // white keys first
+  for (let m = lo; m <= hi; m++) {
+    if (isBlack(m)) continue;
+    const k = document.createElement('div');
+    k.className = 'key white' + (activeSet.has(m) ? ' active' : '');
+    k.style.left = whiteX[m] + 'px';
+    k.style.width = WHITE_W + 'px';
+    k.style.height = WHITE_H + 'px';
+    k.dataset.midi = m;
+    const lbl = document.createElement('div'); lbl.className='lbl'; lbl.textContent = midiToName(m);
+    k.appendChild(lbl);
+    if (fingerByMidi[m]) addFinger(k, fingerByMidi[m]);
+    k.addEventListener('click', ()=> playMidi(m, 260));
+    kb.appendChild(k);
+  }
+  // black keys on top
+  for (let m = lo; m <= hi; m++) {
+    if (!isBlack(m)) continue;
+    const leftWhite = m - 1; // white key just below
+    const baseX = whiteX[leftWhite];
+    if (baseX === undefined) continue;
+    const k = document.createElement('div');
+    k.className = 'key black' + (activeSet.has(m) ? ' active' : '');
+    k.style.left = (baseX + WHITE_W - BLACK_W/2) + 'px';
+    k.style.width = BLACK_W + 'px';
+    k.style.height = BLACK_H + 'px';
+    k.dataset.midi = m;
+    const lbl = document.createElement('div'); lbl.className='lbl'; lbl.textContent = midiToName(m);
+    k.appendChild(lbl);
+    if (fingerByMidi[m]) addFinger(k, fingerByMidi[m]);
+    k.addEventListener('click', ()=> playMidi(m, 260));
+    kb.appendChild(k);
+  }
+}
+function addFinger(keyEl, finger) {
+  const f = document.createElement('div');
+  f.className = 'finger'; f.textContent = finger;
+  keyEl.appendChild(f);
+}
+
+/* ----- Path strip (clickable, lockable) ----- */
+function renderPathStrip() {
+  const strip = $('#pathstrip');
+  strip.innerHTML = '';
+  if (!state.result) return;
+  state.notes.forEach((n, i) => {
+    const pp = document.createElement('div');
+    pp.className = 'pp' + (state.locks[i] ? ' locked' : '');
+    pp.title = 'Click to cycle finger lock (1→5→off) and re-optimize';
+    pp.innerHTML =
+      `<div class="note">${n.name}</div>` +
+      `<div class="fcircle">${state.result.fingers[i]}</div>` +
+      `<div class="pos">${state.locks[i] ? 'locked' : '#' + (i+1)}</div>`;
+    pp.addEventListener('click', () => cycleLock(i));
+    strip.appendChild(pp);
+  });
+}
+function cycleLock(i) {
+  const cur = state.locks[i] || 0;
+  const next = cur >= 5 ? 0 : (cur === 0 ? state.result.fingers[i] : cur + 1);
+  if (next === 0) delete state.locks[i]; else state.locks[i] = next;
+  runOptimize(false);
+}
+
+/* ----- Algorithm panel dispatcher ----- */
+function renderAlgoPanel() {
+  if (!state.result) { clearAStarControls(); $('#dpTable').innerHTML = ''; return; }
+  if (state.result.mode === 'astar') {
+    $('#algoHint').innerHTML = 'Watch the app try out finger positions and home in on the most comfortable path. ' +
+      'Cells fill in as they’re checked (light → dark); dashed cells are options still on the table; the solid path is the final recommendation. Press <b>Animate</b> to replay.';
+    renderAStarGrid(state.result);
+  } else {
+    clearAStarControls();
+    $('#algoHint').innerHTML = 'Each cell shows the running effort to reach that note on a given finger (lower is easier). The highlighted cells trace the most comfortable fingering overall.';
+    renderDpTable();
+  }
+}
+
+/* ----- A* frontier visualization ----- */
+let astarTimer = null;
+function clearAStarControls() {
+  if (astarTimer) { clearInterval(astarTimer); astarTimer = null; }
+  const tools = $('#astarTools'); if (tools) tools.innerHTML = '';
+  const st = $('#astarStatus'); if (st) st.innerHTML = '';
+}
+
+function renderAStarGrid(res) {
+  clearAStarControls();
+  const { events, fingers, expandedCount, totalNodes, totalCost } = res;
+  const N = state.notes.length;
+
+  // Build the grid (rows = notes, cols = fingers).
+  const t = $('#dpTable');
+  t.innerHTML = '';
+  const thead = document.createElement('thead');
+  let hr = '<tr><th>note ↓ / finger →</th>';
+  for (let f = 1; f <= 5; f++) hr += `<th>${f}</th>`;
+  hr += '</tr>';
+  thead.innerHTML = hr; t.appendChild(thead);
+  const tb = document.createElement('tbody');
+  for (let i = 0; i < N; i++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="note-h">${state.notes[i].name}</td>`;
+    for (let f = 1; f <= 5; f++) {
+      const td = document.createElement('td');
+      td.className = 'cell unreached';
+      td.dataset.i = i; td.dataset.f = f;
+      td.textContent = '·';
+      tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  }
+  t.appendChild(tb);
+  const cells = [...t.querySelectorAll('td.cell')];
+
+  // Reconstruct the discovered/expanded sets after the first k+1 events.
+  function stateAfter(k) {
+    const discovered = new Map(), expanded = new Set(), expandOrder = [];
+    for (let e = 0; e <= k; e++) {
+      const ev = events[e]; const kk = ev.i*6 + ev.f;
+      if (ev.type === 'discover') discovered.set(kk, ev.fScore);
+      else if (!expanded.has(kk)) { expanded.add(kk); expandOrder.push(kk); }
+    }
+    return { discovered, expanded, expandOrder, current: k >= 0 ? events[k] : null };
+  }
+
+  function paint(s, showPath) {
+    const maxIdx = Math.max(s.expandOrder.length - 1, 1);
+    cells.forEach(td => {
+      const i = +td.dataset.i, f = +td.dataset.f, kk = i*6 + f;
+      td.className = 'cell'; td.style.background = ''; td.style.color = ''; td.textContent = '·';
+      if (showPath && fingers[i] === f) { td.classList.add('path'); td.textContent = f; return; }
+      if (s.expanded.has(kk)) {
+        const tnorm = s.expandOrder.indexOf(kk) / maxIdx;     // 0 early … 1 late
+        const r = Math.round(222 + (41 - 222) * tnorm);
+        const gg = Math.round(217 + (38 - 217) * tnorm);
+        const b = Math.round(203 + (30 - 203) * tnorm);
+        td.classList.add('expanded');
+        td.style.background = `rgb(${r} ${gg} ${b})`;
+        td.style.color = tnorm > 0.45 ? 'var(--ivory)' : 'var(--text)';
+        td.textContent = (s.discovered.get(kk) ?? 0).toFixed(1);
+      } else if (s.discovered.has(kk)) {
+        td.classList.add('frontier');
+        td.textContent = s.discovered.get(kk).toFixed(1);
+      } else {
+        td.classList.add('unreached');
+      }
+      if (s.current && s.current.i === i && s.current.f === f) td.classList.add('current');
+    });
+  }
+
+  const finalLine = `A* expanded <b>${expandedCount}</b> of ${totalNodes} nodes · optimal cost <b>${totalCost.toFixed(1)}</b>`;
+
+  // Toolbar + legend.
+  const tools = $('#astarTools');
+  tools.innerHTML =
+    `<div class="astar-bar">
+       <button class="ghost" id="aAnimate">▶ Animate</button>
+       <button class="ghost" id="aFinal">⏭ Show result</button>
+       <span class="astar-legend">
+         <span class="lg"><span class="sw ramp"></span>expanded&nbsp;(early→late)</span>
+         <span class="lg"><span class="sw fr"></span>frontier</span>
+         <span class="lg"><span class="sw pa"></span>optimal path</span>
+       </span>
+     </div>`;
+  const status = $('#astarStatus');
+
+  // Default static view = final result.
+  paint(stateAfter(events.length - 1), true);
+  status.innerHTML = finalLine;
+
+  $('#aFinal').addEventListener('click', () => {
+    if (astarTimer) { clearInterval(astarTimer); astarTimer = null; }
+    paint(stateAfter(events.length - 1), true);
+    status.innerHTML = finalLine;
+  });
+  $('#aAnimate').addEventListener('click', () => {
+    if (astarTimer) { clearInterval(astarTimer); astarTimer = null; }
+    let k = 0;
+    paint(stateAfter(-1), false);
+    status.innerHTML = '<b>Searching…</b>';
+    astarTimer = setInterval(() => {
+      if (k >= events.length) {
+        clearInterval(astarTimer); astarTimer = null;
+        paint(stateAfter(events.length - 1), true);
+        status.innerHTML = finalLine;
+        return;
+      }
+      paint(stateAfter(k), false);
+      const ev = events[k];
+      status.innerHTML =
+        `<b>${ev.type === 'expand' ? 'Expand' : 'Discover'}</b> ${state.notes[ev.i].name} · finger ${ev.f} · ` +
+        `f-score ${ev.fScore.toFixed(1)}` +
+        (ev.type === 'expand' ? ` &nbsp;(g ${ev.g.toFixed(1)} + h ${ev.h.toFixed(1)})` : '');
+      k++;
+    }, 240);
+  });
+}
+
+/* ----- DP table ----- */
+function renderDpTable() {
+  const t = $('#dpTable');
+  t.innerHTML = '';
+  if (!state.result) return;
+  const { cost, fingers } = state.result;
+  const thead = document.createElement('thead');
+  let hr = '<tr><th>note ↓ / finger →</th>';
+  for (let f=1; f<=5; f++) hr += `<th>${f}</th>`;
+  hr += '</tr>';
+  thead.innerHTML = hr; t.appendChild(thead);
+
+  const tb = document.createElement('tbody');
+  state.notes.forEach((n,i) => {
+    const tr = document.createElement('tr');
+    let row = `<td class="note-h">${n.name}</td>`;
+    for (let f=1; f<=5; f++) {
+      const c = cost[i][f];
+      const isBest = fingers[i] === f;
+      const cls = 'cell' + (isBest ? ' best' : '') + (c === Infinity ? ' inf' : '');
+      const val = c === Infinity ? '∞' : c.toFixed(1);
+      row += `<td class="${cls}">${val}</td>`;
+    }
+    tr.innerHTML = row; tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+
+/* ----- Step log ----- */
+function renderStepLog() {
+  const el = $('#steplog');
+  if (!state.result) { el.innerHTML = ''; return; }
+  const { fingers } = state.result;
+  // show the transitions that lie on the optimal path
+  const lines = [];
+  for (let i=1; i<state.notes.length; i++) {
+    const t = transitionCost(state.notes[i-1].midi, fingers[i-1], state.notes[i].midi, fingers[i]);
+    const reasons = (t.reasons.length ? t.reasons : ['neutral move']).join('; ');
+    lines.push(
+      `<div><b>${state.notes[i-1].name}</b>(f${fingers[i-1]}) <span class="ar">→</span> ` +
+      `<b>${state.notes[i].name}</b>(f${fingers[i]}) &nbsp;cost <b>${t.cost.toFixed(1)}</b><br>` +
+      `<span style="opacity:.8">↳ ${reasons}</span></div>`
+    );
+  }
+  el.innerHTML = lines.join('<div style="height:8px"></div>') || '<span style="opacity:.6">single note — no transitions</span>';
+}
+
+/* ----- Result panel ----- */
+function renderResult() {
+  const el = $('#result');
+  if (!state.result) return;
+  const { fingers, totalCost } = state.result;
+  const diff = difficultyOf(totalCost, state.notes.length);
+  const reason = mainReason(state.notes, fingers);
+  const fingerStr = fingers.join(' ');
+  const diffClass = diff.toLowerCase();
+  const isA = state.result.mode === 'astar';
+  const algoStat = isA
+    ? `<div class="stat"><div class="k">Algorithm</div><div class="v" style="font-size:18px">A* Search</div></div>` +
+      `<div class="stat"><div class="k">Nodes Expanded</div><div class="v">${state.result.expandedCount}<span style="font-size:15px;color:var(--text-dim)"> / ${state.result.totalNodes}</span></div></div>`
+    : `<div class="stat"><div class="k">Algorithm</div><div class="v" style="font-size:18px">DP / Viterbi</div></div>`;
+  el.innerHTML =
+    `<div class="stat"><div class="k">Recommended Fingering</div><div class="v mono">${fingerStr}</div></div>` +
+    `<div class="stat"><div class="k">Total Movement Cost</div><div class="v">${totalCost.toFixed(1)}</div></div>` +
+    `<div class="stat"><div class="k">Difficulty</div><div class="v"><span class="pill ${diffClass}">${diff}</span></div></div>` +
+    algoStat +
+    `<div class="reason-box"><div class="k">Main Reason</div>${reason}</div>`;
+}
+
+/* ----- Orchestration ----- */
+function runOptimize(reparse = true) {
+  showError('');
+  try {
+    if (reparse) state.notes = parseNotes($('#notes').value);
+    if (reparse) {
+      // drop locks that fall outside the new note list
+      Object.keys(state.locks).forEach(k => { if (+k >= state.notes.length) delete state.locks[k]; });
+    }
+    const mode = $('#algo').value;
+    state.result = (mode === 'astar')
+      ? optimizeAStar(state.notes, state.locks)
+      : optimize(state.notes, state.locks, 'dp');
+    renderKeyboard();
+    renderPathStrip();
+    renderAlgoPanel();
+    renderStepLog();
+    renderResult();
+  } catch (e) {
+    showError(e.message);
+    state.result = null;
+    clearAStarControls();
+    renderKeyboard();
+    $('#pathstrip').innerHTML = '';
+    $('#dpTable').innerHTML = '';
+    $('#steplog').innerHTML = '';
+    $('#algoHint').textContent = '';
+    $('#result').innerHTML = '<div class="empty">Fix the input and re-run.</div>';
+  }
+}
+
+/* ----- Audio (Web Audio API) ----- */
+function ensureAudio() {
+  if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return state.audioCtx;
+}
+function playMidi(midi, durMs) {
+  const ctx = ensureAudio();
+  const freq = 440 * Math.pow(2, (midi - 69) / 12);
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  const now = ctx.currentTime;
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.22, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + durMs/1000);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now); osc.stop(now + durMs/1000 + 0.02);
+  // flash the key
+  const k = document.querySelector('.key[data-midi="'+midi+'"]');
+  if (k) { k.classList.add('playing'); setTimeout(()=>k.classList.remove('playing'), Math.min(durMs, 400)); }
+}
+let playTimer = null;
+function playMelody() {
+  if (!state.notes.length) return;
+  const gap = +$('#tempo').value;
+  ensureAudio();
+  let i = 0;
+  if (playTimer) clearTimeout(playTimer);
+  const step = () => {
+    if (i >= state.notes.length) return;
+    playMidi(state.notes[i].midi, gap * 0.92);
+    i++;
+    playTimer = setTimeout(step, gap);
+  };
+  step();
+}
+
+/* ----- Presets ----- */
+function renderPresets() {
+  const wrap = $('#presets');
+  wrap.innerHTML = '';
+  Object.keys(PRESETS).forEach(name => {
+    const b = document.createElement('button');
+    b.className = 'preset'; b.textContent = name;
+    b.addEventListener('click', () => {
+      $('#notes').value = PRESETS[name];
+      state.locks = {};
+      runOptimize(true);
+      document.querySelector('.keyboard').scrollIntoView({behavior:'smooth', block:'center'});
+    });
+    wrap.appendChild(b);
+  });
+}
+
+/* ----- Wire up ----- */
+$('#run').addEventListener('click', () => { runOptimize(true); });
+$('#play').addEventListener('click', playMelody);
+$('#clearLocks').addEventListener('click', () => { state.locks = {}; runOptimize(false); });
+$('#algo').addEventListener('change', () => runOptimize(false));
+$('#notes').addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); runOptimize(true); }
+});
+
+renderPresets();
+runOptimize(true);
+</script>
+</body>
+</html>
