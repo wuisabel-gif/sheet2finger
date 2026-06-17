@@ -87,18 +87,20 @@ node -e '
 const fs = require("fs");
 const js = fs.readFileSync("index.html","utf8").match(/<script>([\s\S]*?)<\/script>/)[1];
 const pure = js.substring(0, js.indexOf("const $ = sel"));
-const M = new Function(pure + "; return {parseNotes, optimize, optimizeAStar, PRESETS};")();
+const M = new Function(pure + "; return {parseNotes, optimize, frontierSearch, optimizeBFS, PRESETS};")();
 for (const [name, str] of Object.entries(M.PRESETS)) {
   const notes = M.parseNotes(str);
-  const dp = M.optimize(notes, {}, "dp");
-  const a  = M.optimizeAStar(notes, {});
-  const ok = Math.abs(dp.totalCost - a.totalCost) < 1e-9;
-  console.log(name.padEnd(20), dp.fingers.join(" ").padEnd(28), "DP==A*:", ok);
+  const dp  = M.optimize(notes, {}, "dp");
+  const dij = M.frontierSearch(notes, {}, false, "dijkstra");
+  const a   = M.frontierSearch(notes, {}, true, "astar");
+  const ok  = [dij, a].every(r => Math.abs(r.totalCost - dp.totalCost) < 1e-9);
+  console.log(name.padEnd(20), dp.fingers.join(" ").padEnd(28), "DP=Dijkstra=A*:", ok);
 }'
 ```
 
-A\* and the DP should always report the same optimal cost — they explore the same
-graph, so a mismatch means a bug.
+DP, Dijkstra, and A\* explore the same weighted graph, so they must always report
+the same optimal cost — a mismatch means a bug. (BFS deliberately won't match: it
+ignores edge weights and is only a baseline.)
 
 **2. Browser check.** Reload the page and confirm:
 - the presets load and optimize without errors (open the console — it should be clean),
